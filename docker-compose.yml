@@ -18,6 +18,18 @@ services:
       - mongodb
       - redis
 
+  frontend:
+    build:
+      context: ./frontend
+
+    container_name: frontend
+
+    ports:
+      - "3005:80"
+
+    depends_on:
+      - backend
+
   celery-worker:
     build:
       context: ./backend
@@ -96,3 +108,5 @@ volumes:
   postgres_data:
 
   mongo_data:
+
+
