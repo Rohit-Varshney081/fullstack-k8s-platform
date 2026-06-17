@@ -1,0 +1,1 @@
+mkdir -p k8s/databases/{postgres,mongodb}
