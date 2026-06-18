@@ -17,6 +17,12 @@ services:
       - postgres
       - mongodb
       - redis
+      
+    restart: unless-stopped
+    volumes:
+      # This binds your current local directory to the app directory in docker
+      - ./backend:/app 
+    working_dir: /app
 
   frontend:
     build:
@@ -29,6 +35,11 @@ services:
 
     depends_on:
       - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      
+    command: npm run dev -- --host 0.0.0.0
 
   celery-worker:
     build:

@@ -1,11 +1,12 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+
     APP_NAME: str
     APP_ENV: str
-
     API_V1_PREFIX: str
+    LOG_LEVEL: str = "INFO"
 
     POSTGRES_HOST: str
     POSTGRES_PORT: int
@@ -20,26 +21,34 @@ class Settings(BaseSettings):
     REDIS_HOST: str
     REDIS_PORT: int
 
-    LOG_LEVEL: str
-    
-    DATABASE_URL = (
-    f"postgresql://{POSTGRES_USER}:"
-    f"{POSTGRES_PASSWORD}@"
-    f"{POSTGRES_HOST}:"
-    f"{POSTGRES_PORT}/"
-    f"{POSTGRES_DB}"
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        extra="ignore"
     )
 
-    MONGO_URL = (
-        f"mongodb://{MONGO_HOST}:{MONGO_PORT}"
-    )
+    @property
+    def DATABASE_URL(self):
+        return (
+            f"postgresql://{self.POSTGRES_USER}:"
+            f"{self.POSTGRES_PASSWORD}@"
+            f"{self.POSTGRES_HOST}:"
+            f"{self.POSTGRES_PORT}/"
+            f"{self.POSTGRES_DB}"
+        )
 
-    REDIS_URL = (
-        f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
-    )
+    @property
+    def MONGO_URL(self):
+        return (
+            f"mongodb://{self.MONGO_HOST}:"
+            f"{self.MONGO_PORT}"
+        )
 
-    class Config:
-        env_file = ".env"
+    @property
+    def REDIS_URL(self):
+        return (
+            f"redis://{self.REDIS_HOST}:"
+            f"{self.REDIS_PORT}/0"
+        )
 
 
 settings = Settings()
