@@ -9,12 +9,14 @@ class UserRepository:
         self,
         db: Session,
         name: str,
-        email: str
+        email: str,
+        password_hash: str = None
     ):
 
         user = User(
             name=name,
-            email=email
+            email=email,
+            password_hash=password_hash
         )
 
         db.add(user)
@@ -31,3 +33,14 @@ class UserRepository:
     ):
 
         return db.query(User).all()
+    
+    def get_by_email(
+        self,
+        db,
+        email
+    ):
+        return (
+            db.query(User)
+            .filter(User.email == email)
+            .first()
+        )

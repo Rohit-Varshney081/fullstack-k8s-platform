@@ -8,6 +8,10 @@ from app.repositories.user_repository import UserRepository
 from app.schemas.user import UserCreate
 
 from app.services.audit_service import AuditService
+from app.core.dependencies import (
+    get_current_user
+)
+from app.core.rbac import require_admin
 
 router = APIRouter(
     prefix="/users",
@@ -47,3 +51,23 @@ def get_users(
 ):
 
     return repo.get_all(db)
+
+@router.get("/profile")
+def profile(
+    user=Depends(
+        get_current_user
+    )
+):
+
+    return user
+
+@router.get("/admin")
+def admin_only(
+    user=Depends(
+        require_admin
+    )
+):
+
+    return {
+        "message":"Admin access granted"
+    }
