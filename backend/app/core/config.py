@@ -20,6 +20,8 @@ class Settings(BaseSettings):
 
     REDIS_HOST: str
     REDIS_PORT: int
+    CELERY_BROKER_URL: str
+    CELERY_RESULT_BACKEND: str
     
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str
