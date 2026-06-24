@@ -24,22 +24,55 @@ services:
       - ./backend:/app 
     working_dir: /app
 
-  frontend:
+  # frontend:
+  #   build:
+  #     context: ./frontend
+
+  #   container_name: frontend
+
+  #   ports:
+  #     - "3005:80"
+
+  #   depends_on:
+  #     - backend
+  #   volumes:
+  #     - ./frontend:/app
+  #     - /app/node_modules
+      
+  #   command: npm run dev -- --host 0.0.0.0
+  frontend-vite:
     build:
       context: ./frontend
+      dockerfile: Dockerfile.dev
 
-    container_name: frontend
+    container_name: frontend-vite
+
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+    expose:
+      - "5173"
+
+    depends_on:
+      - backend
+
+  frontend:
+    image: nginx:alpine
+
+    container_name: frontend-nginx
 
     ports:
       - "3005:80"
 
-    depends_on:
-      - backend
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      
-    command: npm run dev -- --host 0.0.0.0
+      - ./frontend/nginx.dev.conf:/etc/nginx/conf.d/default.conf
+
+    depends_on:
+      - frontend-vite
+      - backend
+      - flower
+      - grafana
 
   celery-worker:
     build:
@@ -62,6 +95,23 @@ services:
 
     env_file:
       - .env
+
+    depends_on:
+      - redis
+
+  flower:
+    build:
+      context: ./backend
+
+    command: >
+      celery
+      -A app.tasks.celery_app
+      flower
+      --port=5555
+      --url_prefix=flower
+
+    ports:
+      - "5555:5555"
 
     depends_on:
       - redis
@@ -113,6 +163,33 @@ services:
 
     ports:
       - "6375:6379"
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+
+    restart: unless-stopped
+
+    environment:
+      GF_SERVER_ROOT_URL: http://localhost:3005/grafana/
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+
+    ports:
+      - "3006:3000"
+
+    depends_on:
+      - prometheus
+
+  prometheus:
+    image: prom/prometheus
+
+    container_name: prometheus
+
+    ports:
+      - "9090:9090"
+
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
 
 volumes:
 
