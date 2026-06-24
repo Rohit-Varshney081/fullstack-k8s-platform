@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+
+kind: Ingress
+
+metadata:
+  name: backend-ingress
+  namespace: fullstack-platform
+
+spec:
+
+  ingressClassName: nginx
+
+  rules:
+
+  - host: api.local
+
+    http:
+
+      paths:
+
+      - path: /
+
+        pathType: Prefix
+
+        backend:
+
+          service:
+
+            name: backend-service
+
+            port:
+
+              number: 8000
