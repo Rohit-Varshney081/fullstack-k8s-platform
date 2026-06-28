@@ -7,7 +7,8 @@ metadata:
 
 spec:
   clusterIP: None
-
+  # This service is used to expose the Postgres database to other pods in the same namespace. It uses a headless service (clusterIP: None) to allow direct access to the individual pods running the Postgres database.
+  # This provides stable DNS names such as: postgres-0.postgres-service.fullstack-platform.svc.cluster.local
   selector:
     app: postgres
 

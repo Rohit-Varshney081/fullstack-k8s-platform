@@ -4,34 +4,57 @@ kind: StatefulSet
 metadata:
   name: postgres
   namespace: fullstack-platform
+  labels:
+    app: postgres
+    component: database
+    tier: backend
 
 spec:
   serviceName: postgres-service
 
   replicas: 1
 
+  podManagementPolicy: OrderedReady
+
+  updateStrategy:
+    type: RollingUpdate
+
+  revisionHistoryLimit: 5
+
   selector:
     matchLabels:
       app: postgres
 
   template:
-
     metadata:
       labels:
         app: postgres
+        component: database
+        tier: backend
 
     spec:
+      terminationGracePeriodSeconds: 30
+
+      securityContext:
+        fsGroup: 999
 
       containers:
-
         - name: postgres
 
           image: postgres:16
 
+          imagePullPolicy: IfNotPresent
+
           ports:
-            - containerPort: 5432
+            - name: postgres
+              containerPort: 5432
 
           env:
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_DB
 
             - name: POSTGRES_USER
               valueFrom:
@@ -45,49 +68,65 @@ spec:
                   name: postgres-secret
                   key: POSTGRES_PASSWORD
 
-            - name: POSTGRES_DB
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-secret
-                  key: POSTGRES_DB
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
 
           volumeMounts:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data
 
-          readinessProbe:
-
+          startupProbe:
             exec:
               command:
-                - pg_isready
-                - -U
-                - appuser
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 
-            initialDelaySeconds: 15
+            failureThreshold: 30
             periodSeconds: 10
 
-          livenessProbe:
-
+          readinessProbe:
             exec:
               command:
-                - pg_isready
-                - -U
-                - appuser
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+
 
             initialDelaySeconds: 30
             periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
 
   volumeClaimTemplates:
-
     - metadata:
         name: postgres-storage
 
       spec:
-
         accessModes:
           - ReadWriteOnce
 
         resources:
-
           requests:
-            storage: 5Gi
+            storage: 10Gi
